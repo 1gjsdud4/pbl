@@ -38,19 +38,21 @@
                 <div class="chat-wrapper w-100 d-flex flex-column align-items-center" style="max-width: 800px; padding-top: 20px;">
                     <!-- 빈 상태 안내 메시지 -->
                     <div class="text-center mb-3" id="empty-chat-message">
-                        <h1>무엇을 도와드릴까요?</h1>
-                        <p>궁금한 질문을 입력하고 보내기를 눌러보세요!</p>
+                        <h1>안녕하세요. PBL 도우미입니다.</h1>
+                        <p>PBL 설계를 옆에서 차근 차근 도와드리는 도우미입니다.</p>
+                        <button class="btn btn-primary w-100" id="start-button">대화 시작</button>
                     </div>
                     <!-- 채팅 영역 -->
                     <div class="chat-box mt-3 p-3 w-100" id="chat-body" style="display: none;">
                         <!-- 대화 내용이 여기에 표시됩니다 -->
                     </div>
                 </div>
-                <!-- 입력창 영역 -->
-                <div id="loading-message" class="text-center mt-3" style="display: none;">
-                    <p>로딩 중입니다...</p>
-                </div>
-                <div class="input-container mt-3 w-100" id="message-input-container">
+                <!-- 채팅 입력창과 로딩 메시지 -->
+                <div class="input-container mt-3 w-100 position-relative" id="message-input-container">
+                    <!-- 로딩 메시지 -->
+                    <div id="loading-message" class="text-center position-absolute w-100" style="top: -30px; display: none;">
+                        <p class="m-0">로딩 중입니다...</p>
+                    </div>
                     <!-- 메시지 입력창 -->
                     <textarea class="form-control" id="message-input" placeholder="메시지를 입력하세요..." rows="1" style="resize: none; max-height: 200px; overflow-y: auto;"></textarea>
                     <!-- 전송 버튼 -->
@@ -161,6 +163,34 @@
                     }
                 });
             }
+            // "대화 시작" 버튼 클릭 이벤트
+            $('#start-button').click(function() {
+                // 초기 화면 숨기기
+                $('#empty-chat-message').hide();
+                $('#chat-body').show();
+                setMainContainerLayout(false);
+
+                // 로딩 메시지 표시
+                $('#loading-message').show();
+
+                // 백엔드에서 첫 메시지 가져오기
+                $.ajax({
+                    url: '/get_first_message', // 백엔드 엔드포인트
+                    type: 'POST', // POST 요청으로 변경
+                    contentType: 'application/json',
+                    data: JSON.stringify({ chat_id: currentChatId }), // chat_id를 함께 전달
+                    success: function(data) {
+                        appendMessage('assistant', data.message); // 메시지를 채팅창에 추가
+                    },
+                    error: function(xhr, status, error) {
+                        alert("첫 메시지를 가져오는 데 실패했습니다: " + error);
+                    },
+                    complete: function() {
+                        // 로딩 메시지 숨기기
+                        $('#loading-message').hide();
+                    }
+                });
+            });
 
             function loadChat(chatId) {
                 $('#empty-chat-message').hide();
