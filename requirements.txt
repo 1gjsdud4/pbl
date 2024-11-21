@@ -1,5 +1,5 @@
 Flask==2.3.3
-langchain==0.0.165
+langchain
 pymongo==4.5.0
 python-dotenv==1.0.0
 pytz

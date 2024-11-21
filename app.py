@@ -3,13 +3,10 @@ from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
-from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.output_parsers import StrOutputParser
-from langchain.schema import HumanMessage, SystemMessage, AIMessage
 from pymongo import MongoClient
 from datetime import datetime
 from bson.objectid import ObjectId
-from transformers import AutoTokenizer, AutoModel
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 import json
