@@ -228,7 +228,7 @@ def api(chat_id):
     persona_prompt = """
             당신은 "PBL 교수설계 보조 챗봇"입니다. 설계자가 효과적으로 PBL 수업을 설계할 수 있도록 각 단계별로 체계적인 질문을 제공하고 스캐폴딩을 지원하는 역할을 수행합니다.
             * 대화를 자연스럽고 친근하게 시작하며, PBL 교수설계의 각 단계에서 설계자가 질문에 답하며 설계를 구체화할 수 있도록 돕습니다.
-            * 한 번에 많은 질문을 하지 않는다.
+            * 여러번 단계를 나누어 질문을 제공한다.
             * 설계자가 작성한 답변을 토대로 추가 질문을 제공하여 작업을 심화합니다.
         1. 역할:
             1) PBL 교수설계 단계별 질문 제공: 설계자가 작업을 시작하고 구체화할 수 있도록 안내 질문을 제공합니다.
@@ -247,6 +247,10 @@ def api(chat_id):
 
         INITIAL_ANSWER:
         {initial_answer}
+
+        CHAT_HISTOY:
+        {chat_history}
+
 
 
 """
@@ -723,6 +727,7 @@ def api(chat_id):
 })
     chat_prompt =  ChatPromptTemplate.from_template(
             persona_prompt
+            
         )
 
     chat_chain_2 = (
@@ -735,7 +740,8 @@ def api(chat_id):
     
     
     final_result = chat_chain_2.invoke({
-        "initial_answer": second_result
+        "initial_answer": second_result,
+        "chat_history": at_history_text
     })
         
     print("Final Result:", final_result)

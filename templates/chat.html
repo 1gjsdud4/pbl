@@ -47,6 +47,9 @@
                     </div>
                 </div>
                 <!-- 입력창 영역 -->
+                <div id="loading-message" class="text-center mt-3" style="display: none;">
+                    <p>로딩 중입니다...</p>
+                </div>
                 <div class="input-container mt-3 w-100" id="message-input-container">
                     <!-- 메시지 입력창 -->
                     <textarea class="form-control" id="message-input" placeholder="메시지를 입력하세요..." rows="1" style="resize: none; max-height: 200px; overflow-y: auto;"></textarea>
@@ -126,7 +129,6 @@
                 if (message === '') return;
 
                 if (isFirstMessage) {
-                    // 첫 메시지 전송 시 안내 메시지 숨기기 및 입력창 하단으로 이동
                     $('#empty-chat-message').hide();
                     $('#chat-body').show();
                     setMainContainerLayout(false);
@@ -135,6 +137,9 @@
 
                 appendMessage('user', message);
                 $('#message-input').val('');
+
+                // 로딩 메시지 표시
+                $('#loading-message').show();
 
                 $.ajax({
                     url: `/api/${currentChatId}`,
@@ -149,16 +154,21 @@
                     },
                     error: function(xhr, status, error) {
                         alert("메시지 전송에 실패했습니다: " + error);
+                    },
+                    complete: function() {
+                        // 로딩 메시지 숨기기
+                        $('#loading-message').hide();
                     }
                 });
             }
 
             function loadChat(chatId) {
-                // 기존 메시지 초기화
-                $('#empty-chat-message').hide(); // 안내 메시지 숨기기
-                $('#chat-body').show().empty(); // 기존 메시지 초기화
+                $('#empty-chat-message').hide();
+                $('#chat-body').show().empty();
 
-                // 새로운 대화 내용 로드
+                // 로딩 메시지 표시
+                $('#loading-message').show();
+
                 $.get(`/get_chat/${chatId}`, function(data) {
                     if (data.error) {
                         alert(data.error);
@@ -166,25 +176,26 @@
                     }
 
                     if (data.messages.length === 0) {
-                        // 대화가 비어 있을 경우
                         $('#empty-chat-message').show();
                         $('#chat-body').hide();
                         setMainContainerLayout(true);
                         isFirstMessage = true;
                     } else {
                         $('#empty-chat-message').hide();
-                        $('#chat-body').show(); // 비어 있는 상태라도 다시 표시
+                        $('#chat-body').show();
                         data.messages.forEach(msg => {
-                            appendMessage(msg.role, msg.content); // 메시지를 동적으로 추가
+                            appendMessage(msg.role, msg.content);
                         });
                         setMainContainerLayout(false);
                         isFirstMessage = false;
                     }
                 }).fail(function() {
                     alert('대화를 불러오는 중 오류가 발생했습니다.');
+                }).always(function() {
+                    // 로딩 메시지 숨기기
+                    $('#loading-message').hide();
                 });
             }
-
             function appendMessage(role, content) {
                 const messageDiv = $('<div>').addClass('mt-3 p-2 rounded');
                 let imgSrc = '';
