@@ -1,7 +1,7 @@
-Flask == 2.3.3
-langchain ==0.3.0
-pymongo == 4.5.0
-python-dotenv == 1.0.0
-pytz == 2023.3
-openai == 0.27.8
-langchain_openai == 0.2.9
+Flask==2.3.3
+langchain==0.3.0
+pymongo==4.5.0
+python-dotenv==1.0.0
+pytz
+openai>=1.54.0,<2.0.0
+langchain-openai==0.2.9
