@@ -7,21 +7,15 @@ body {
   color: #333; /* 기본 텍스트 색상 */
 }
 
-/* 컨테이너 레이아웃 설정 */
-.container-fluid {
-  display: flex;
-  flex-wrap: nowrap; /* 줄바꿈 방지 */
-  height: 100vh; /* 전체 화면 높이 */
-}
-
-/* 사이드바 기본 스타일 */
+/* 사이드바 */
 .sidebar {
-  flex: 0 0 250px; /* 기본 너비 고정 */
-  max-width: 250px;
+  background-color: #e4e4e4; /* 흰색 배경 */
+  border-right: 1px solid #ddd; /* 사이드바 경계선 */
+  width: 250px; /* 기본 너비 감소 */
   height: 100vh;
-  background-color: #e4e4e4; /* 기존 배경색 */
   overflow-y: auto;
-  box-sizing: border-box;
+  padding: 20px;
+  transition: transform 0.3s ease-in-out;
 }
 
 .sidebar h3 {
@@ -77,14 +71,17 @@ body {
   background-color: #e9e9e9; /* 살짝 진한 회색 */
 }
 
-/* 채팅 박스 */
+/* 메인 콘텐츠 */
 .chat-box {
-  flex: 1; /* 사이드바를 제외한 모든 공간 차지 */
-  max-width: calc(100% - 250px); /* 기본적으로 사이드바를 뺀 나머지 */
-  margin: 0 auto; /* 가운데 정렬 */
+  display: flex;
+  flex-direction: column; /* 메시지를 세로로 정렬 */
+  height: calc(100vh - 160px); /* 화면 높이에 따라 크기 조절 (입력 영역을 제외한 높이) */
+  max-width: 800px;
+  margin: 20px auto; /* 가운데 정렬 및 위쪽에 여백 추가 */
+  overflow-y: auto;
+  background-color: #ffffff;
   padding: 20px;
   box-sizing: border-box;
-  overflow-y: auto; /* 스크롤 허용 */
 }
 
 /* 공통 메시지 스타일 */
@@ -231,25 +228,26 @@ body {
   }
 }
 
-/* 모바일 뷰 */
+/* 반응형 디자인 */
 @media (max-width: 768px) {
   .sidebar {
-    flex: 0 0 200px; /* 모바일에서 사이드바 너비 줄이기 */
-    max-width: 200px;
+      position: fixed;
+      z-index: 1000;
+      width: 220px; /* 모바일에서 사이드바 너비 감소 */
+      left: -220px;
+      top: 0;
+      bottom: 0;
+      background-color: #ffffff;
+      box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+      overflow-y: auto;
+      transition: transform 0.3s ease-in-out;
   }
 
-  .chat-box {
-    max-width: calc(100% - 200px); /* 사이드바 줄어든 만큼 고려 */
-  }
-}
-
-/* 매우 작은 화면 (사이드바가 숨겨질 경우) */
-@media (max-width: 576px) {
-  .sidebar {
-    display: none; /* 작은 화면에서 사이드바 숨김 */
+  .sidebar.collapsed {
+      transform: translateX(0);
   }
 
-  .chat-box {
-    max-width: 100%; /* 전체 화면을 사용 */
+  #input-group-container {
+      width: 100%;
   }
 }
