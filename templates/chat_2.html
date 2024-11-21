@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>챗봇</title>
+    <!-- 반응형 디자인을 위한 메타 태그 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- Highlight.js CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/a11y-dark.min.css">
+    <!-- 커스텀 CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- 사이드바 -->
+            <div class="col-md-3 sidebar">
+                <h3>{{ name }}님</h3>
+                <button class="btn btn-primary btn-block" id="new-chat-button">새 대화</button>
+                <ul class="list-group mt-3" id="chat-list">
+                    {% for chat in chats | reverse %}
+                        <li class="list-group-item">
+                            <a href="#" class="chat-link" data-chat-id="{{ chat._id }}">{{ chat.title }}</a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <!-- 채팅 영역 -->
+            <div class="col-md-9">
+                <div class="chat-box mt-3" id="chat-body">
+                </div>
+                 <!-- 대화 내용이 여기에 표시됩니다 -->
+                 <div class="input-group mt-3">
+                    <textarea class="form-control" id="message-input" placeholder="메시지를 입력하세요..." rows="2"></textarea>
+                    <div class="input-group-append">
+                        <button class="btn btn-primary" id="send-button">전송</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- jQuery 및 Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.min.js"></script>
+    <!-- Highlight.js JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <!-- 추가된 기능을 위한 JavaScript -->
+    <script>
+        let currentChatId = "{{ current_chat_id }}";  // 서버에서 전달된 현재 대화 ID
+
+        $(document).ready(function() {
+            // 페이지 로드 시 현재 대화가 설정되어 있으면 자동으로 로드
+            if (currentChatId) {
+                loadChat(currentChatId);
+                highlightCurrentChat(currentChatId);
+            }
+
+            // 새로운 대화 시작
+            $('#new-chat-button').click(function() {
+                
+                $.ajax({
+                    url: '/new_chat',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ title: title }),
+                    success: function(data) {
+                        // 채팅 목록에 추가
+                        $('#chat-list').append(`
+                            <li class="list-group-item">
+                                <a href="#" class="chat-link" data-chat-id="${data.chat_id}">${data.title}</a>
+                            </li>
+                        `);
+                        // 새로 생성된 대화를 자동으로 로드
+                        loadChat(data.chat_id);
+                        highlightCurrentChat(data.chat_id);
+                    }
+                });
+                
+            });
+
+            // 채팅 선택
+            $(document).on('click', '.chat-link', function(e) {
+                e.preventDefault();
+                const chatId = $(this).data('chat-id');
+                currentChatId = chatId;
+                // 모든 리스트 항목의 active 클래스 제거
+                $('#chat-list .list-group-item').removeClass('active');
+                // 선택된 리스트 항목에 active 클래스 추가
+                $(this).closest('.list-group-item').addClass('active');
+                // 기존 채팅 내용 불러오기
+                loadChat(chatId);
+            });
+
+            // 메시지 전송
+            $('#send-button').click(function() {
+                sendMessage();
+            });
+
+            $('#message-input').keypress(function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+
+            function sendMessage() {
+                const message = $('#message-input').val().trim();
+                if (message === '') return;
+                if (!currentChatId) {
+                    alert("먼저 대화를 선택하거나 새 대화를 시작하세요.");
+                    return;
+                }
+                appendMessage('user', message);
+                $('#message-input').val('');
+
+                // 서버로 메시지 전송
+                $.ajax({
+                    url: `/api/${currentChatId}`,
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ message: message }),
+                    success: function(data) {
+                        appendMessage('assistant', data.message);
+                        if (data.title) {
+                            updateChatTitle(currentChatId, data.title);
+                        }
+                    },
+                    error: function() {
+                        alert("메시지 전송에 실패했습니다.");
+                    }
+                });
+            }
+
+            function updateChatTitle(chatId, newTitle) {
+                const chatLink = $(`.chat-link[data-chat-id="${chatId}"]`);
+                chatLink.text(newTitle);
+            }
+            function loadChat(chatId) {
+                $.get(`/get_chat/${chatId}`, function(data) {
+                    if (data.error) {
+                        alert(data.error);
+                        return;
+                    }
+                    $('#chat-body').empty();
+                    data.messages.forEach(msg => {
+                        appendMessage(msg.role, msg.content);
+                    });
+                });
+            }
+
+            function appendMessage(role, content) {
+                const messageDiv = document.createElement('div');
+                messageDiv.classList.add('mt-3', 'p-2', 'rounded');
+
+                let imgSrc = '';
+                if (role === 'user') {
+                    messageDiv.classList.add('user-message');
+                    imgSrc = "{{ url_for('static', filename='images/user.png') }}";
+                } else if (role === 'assistant') {
+                    messageDiv.classList.add('bot-message');
+                    imgSrc = "{{ url_for('static', filename='images/gpt.jpg') }}";
+                }
+
+                // 줄 바꿈과 공백을 HTML에서 표현하기 위해 content를 처리
+                let formattedContent = content.replace(/\n/g, '<br>').replace(/  /g, '&nbsp;&nbsp;');
+
+                // 코드 블록 처리
+                const codeBlockRegex = /```([a-z]*)\n([\s\S]*?)```/g;
+                formattedContent = formattedContent.replace(codeBlockRegex, function(match, lang, code) {
+                    const escapedCode = code.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                    return `<pre><code class="language-${lang}">${escapedCode}</code></pre>`;
+                });
+
+                const messageHTML = `
+                    <img src="${imgSrc}" alt="${role} icon">
+                    <div>${formattedContent}</div>
+                `;
+
+                messageDiv.innerHTML = messageHTML;
+                $('#chat-body').append(messageDiv);
+                $('#chat-body').scrollTop($('#chat-body')[0].scrollHeight);
+
+                // 코드 블록 하이라이팅
+                document.querySelectorAll('pre code').forEach((block) => {
+                    hljs.highlightElement(block);
+                });
+            }
+
+            function highlightCurrentChat(chatId) {
+                // 모든 리스트 항목의 active 클래스 제거
+                $('#chat-list .list-group-item').removeClass('active');
+                // 현재 선택된 채팅 리스트 항목에 active 클래스 추가
+                $(`.chat-link[data-chat-id="${chatId}"]`).closest('.list-group-item').addClass('active');
+            }
+        })
+        </script>
+</body>
+</html>

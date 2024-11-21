@@ -1,0 +1,11 @@
+Flask
+langchain
+pymongo
+python-dotenv
+pytz
+openai 
+tiktoken 
+langchain-openai 
+pandas
+sentence-transformers
+langchain_community

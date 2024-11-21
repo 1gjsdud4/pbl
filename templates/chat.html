@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PBL 도우미</title>
+    <!-- Bootstrap CSS (최신 버전으로 업데이트) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <!-- Highlight.js CSS (최신 버전으로 업데이트) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/a11y-dark.min.css">
+    <!-- 커스텀 CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- 사이드바 -->
+            <nav class="col-lg-3 sidebar p-4">
+                <div class="user-info mb-4">
+                    <h3>{{ name }}님</h3>
+                    <button class="btn btn-primary w-100" id="new-chat-button">새 대화 시작</button>
+                </div>
+                <hr>
+                <div class="chat-history">
+                    <ul class="list-group" id="chat-list">
+                        {% for chat in chats | reverse %}
+                        <li class="list-group-item list-group-item-action d-flex align-items-center">
+                            <img src="{{ url_for('static', filename='images/chat.png') }}" alt="chat icon" class="me-2" width="25">
+                            <a href="#" class="chat-link text-dark fw-bold flex-grow-1" data-chat-id="{{ chat._id }}">{{ chat.title }}</a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </nav>
+            <!-- 채팅 영역 -->
+            <main class="col-lg-9 d-flex flex-column align-items-center" id="main-container">
+                <!-- 채팅 영역과 안내문을 포함한 컨테이너 -->
+                <div class="chat-wrapper w-100 d-flex flex-column align-items-center" style="max-width: 800px; padding-top: 20px;">
+                    <!-- 빈 상태 안내 메시지 -->
+                    <div class="text-center mb-3" id="empty-chat-message">
+                        <h1>무엇을 도와드릴까요?</h1>
+                        <p>궁금한 질문을 입력하고 보내기를 눌러보세요!</p>
+                    </div>
+                    <!-- 채팅 영역 -->
+                    <div class="chat-box mt-3 p-3 w-100" id="chat-body" style="display: none;">
+                        <!-- 대화 내용이 여기에 표시됩니다 -->
+                    </div>
+                </div>
+                <!-- 입력창 영역 -->
+                <div class="input-container mt-3 w-100" id="message-input-container">
+                    <!-- 메시지 입력창 -->
+                    <textarea class="form-control" id="message-input" placeholder="메시지를 입력하세요..." rows="1" style="resize: none; max-height: 200px; overflow-y: auto;"></textarea>
+                    <!-- 전송 버튼 -->
+                    <button class="btn btn-primary send-button" id="send-button">
+                        <span class="send-icon">^</span>
+                    </button>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- jQuery (최신 버전으로 업데이트) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Bootstrap JS (최신 버전으로 업데이트) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Highlight.js JS (최신 버전으로 업데이트) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+    <!-- 추가된 기능을 위한 JavaScript -->
+    <script>
+        $(document).ready(function() {
+            let currentChatId = "{{ current_chat_id }}";  // 서버에서 전달된 현재 대화 ID
+            let isFirstMessage = true;
+
+            initialize();
+
+            function initialize() {
+                if (currentChatId) {
+                    loadChat(currentChatId);
+                    highlightCurrentChat(currentChatId);
+                }
+                attachEventHandlers();
+            }
+
+            function attachEventHandlers() {
+                $('#new-chat-button').click(createNewChat);
+                $(document).on('click', '.chat-link', handleChatSelection);
+                $('#send-button').click(sendMessage);
+                $('#message-input').keypress(function(e) {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        sendMessage();
+                    }
+                });
+            }
+
+            function createNewChat() {
+                $.ajax({
+                    url: '/new_chat',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ title: '새 대화' }),
+                    success: function(data) {
+                        $('#chat-list').append(`
+                            <li class="list-group-item list-group-item-action d-flex align-items-center">
+                                <img src="{{ url_for('static', filename='images/chat.png') }}" alt="chat icon" class="me-2" width="25">
+                                <a href="#" class="chat-link text-dark fw-bold flex-grow-1" data-chat-id="${data.chat_id}">${data.title}</a>
+                            </li>
+                        `);
+                        loadChat(data.chat_id);
+                        highlightCurrentChat(data.chat_id);
+                    }
+                });
+            }
+
+            function handleChatSelection(e) {
+                e.preventDefault();
+                const chatId = $(this).data('chat-id');
+                currentChatId = chatId;
+                $('#chat-list .list-group-item').removeClass('active');
+                $(this).closest('.list-group-item').addClass('active');
+                loadChat(chatId);
+            }
+
+            function sendMessage() {
+                const message = $('#message-input').val().trim();
+                if (message === '') return;
+
+                if (isFirstMessage) {
+                    // 첫 메시지 전송 시 안내 메시지 숨기기 및 입력창 하단으로 이동
+                    $('#empty-chat-message').hide();
+                    $('#chat-body').show();
+                    setMainContainerLayout(false);
+                    isFirstMessage = false;
+                }
+
+                appendMessage('user', message);
+                $('#message-input').val('');
+
+                $.ajax({
+                    url: `/api/${currentChatId}`,
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ message: message }),
+                    success: function(data) {
+                        appendMessage('assistant', data.message);
+                        if (data.title) {
+                            updateChatTitle(currentChatId, data.title);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        alert("메시지 전송에 실패했습니다: " + error);
+                    }
+                });
+            }
+
+            function loadChat(chatId) {
+                // 기존 메시지 초기화
+                $('#empty-chat-message').hide(); // 안내 메시지 숨기기
+                $('#chat-body').show().empty(); // 기존 메시지 초기화
+
+                // 새로운 대화 내용 로드
+                $.get(`/get_chat/${chatId}`, function(data) {
+                    if (data.error) {
+                        alert(data.error);
+                        return;
+                    }
+
+                    if (data.messages.length === 0) {
+                        // 대화가 비어 있을 경우
+                        $('#empty-chat-message').show();
+                        $('#chat-body').hide();
+                        setMainContainerLayout(true);
+                        isFirstMessage = true;
+                    } else {
+                        $('#empty-chat-message').hide();
+                        $('#chat-body').show(); // 비어 있는 상태라도 다시 표시
+                        data.messages.forEach(msg => {
+                            appendMessage(msg.role, msg.content); // 메시지를 동적으로 추가
+                        });
+                        setMainContainerLayout(false);
+                        isFirstMessage = false;
+                    }
+                }).fail(function() {
+                    alert('대화를 불러오는 중 오류가 발생했습니다.');
+                });
+            }
+
+            function appendMessage(role, content) {
+                const messageDiv = $('<div>').addClass('mt-3 p-2 rounded');
+                let imgSrc = '';
+
+                if (role === 'user') {
+                    messageDiv.addClass('user-message');
+                    imgSrc = "{{ url_for('static', filename='images/user.png') }}";
+                } else if (role === 'assistant') {
+                    messageDiv.addClass('bot-message');
+                    imgSrc = "{{ url_for('static', filename='images/gpt.jpg') }}";
+                }
+
+                let formattedContent = escapeHtml(content).replace(/\n/g, '<br>').replace(/  /g, '&nbsp;&nbsp;');
+                const messageHTML = `<img src="${imgSrc}" alt="${role} icon"><div>${formattedContent}</div>`;
+                
+                messageDiv.html(messageHTML);
+                $('#chat-body').append(messageDiv);
+                
+                setTimeout(function() {
+                    $('#chat-body').scrollTop($('#chat-body')[0].scrollHeight);
+                }, 100);
+            }
+
+            function escapeHtml(text) {
+                return text.replace(/&/g, "&amp;")
+                           .replace(/</g, "&lt;")
+                           .replace(/>/g, "&gt;")
+                           .replace(/"/g, "&quot;")
+                           .replace(/'/g, "&#039;");
+            }
+
+            function highlightCurrentChat(chatId) {
+                $('#chat-list .list-group-item').removeClass('active');
+                $(`.chat-link[data-chat-id="${chatId}"]`).closest('.list-group-item').addClass('active');
+            }
+
+            function updateChatTitle(chatId, newTitle) {
+                const chatLink = $(`.chat-link[data-chat-id="${chatId}"]`);
+                chatLink.text(newTitle);
+            }
+
+            function setMainContainerLayout(isChatEmpty) {
+                if (isChatEmpty) {
+                    $('#main-container').css({
+                        "justify-content": "center",
+                        "align-items": "center",
+                        "height": "100vh"
+                    });
+                    $('#message-input-container').removeClass('fixed-bottom-input');
+                } else {
+                    $('#main-container').css({
+                        "justify-content": "flex-start",
+                        "align-items": "stretch",
+                        "height": "auto"
+                    });
+                    $('#message-input-container').addClass('fixed-bottom-input');
+                }
+            }
+        });
+    </script>
+</body>
+</html>
