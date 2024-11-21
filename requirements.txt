@@ -4,3 +4,4 @@ pymongo==4.5.0
 python-dotenv==1.0.0
 pytz
 openai==0.27.8
+langchain_openai
