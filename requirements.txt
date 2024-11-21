@@ -5,3 +5,4 @@ python-dotenv==1.0.0
 pytz
 openai>=1.54.0,<2.0.0
 langchain-openai==0.2.9
+scikit-learn
