@@ -1,11 +1,6 @@
-Flask
-langchain
-pymongo
-python-dotenv
-pytz
-openai 
-tiktoken 
-langchain-openai 
-pandas
-sentence-transformers
-langchain_community
+Flask==2.3.3
+langchain==0.0.165
+pymongo==4.5.0
+python-dotenv==1.0.0
+pytz==2024.0
+openai==0.27.8
