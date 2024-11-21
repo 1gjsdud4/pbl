@@ -719,8 +719,10 @@ def api(chat_id):
     | chat_prompt  # 프롬프트 적용
     | chat_llm   # OpenAI 모델 실행
     | StrOutputParser()  
-)   
-    at_history_text = "\n".join([f"{msg['role']}: {msg['content']}" for msg in messages])
+)   # 최근 N개의 메시지만 포함
+    N = 20  # 메시지 개수 제한
+    limited_messages = messages[-N:]  # 최근 N개의 메시지 선택
+    at_history_text = "\n".join([f"{msg['role']}: {msg['content']}" for msg in limited_messages])
     second_result = chat_chain.invoke({
     "question": question,
     "chat_history": at_history_text
