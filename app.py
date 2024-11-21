@@ -188,7 +188,8 @@ def new_chat():
         "last_updated": time_now()
     }
     chats_collection.insert_one(chat_data)
-    return jsonify({"chat_id": chat_id, "title": title})
+    current_chat_id = chat_id
+    return jsonify({"chat_id": current_chat_id, "title": title})
 
 
 # 특정 대화 불러오기
