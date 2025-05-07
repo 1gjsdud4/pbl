@@ -1,0 +1,19 @@
+
+```
+pbl
+├─ app.py
+├─ requirements.txt
+├─ static
+│  ├─ images
+│  │  ├─ chat.png
+│  │  ├─ gpt.jpg
+│  │  └─ user.png
+│  └─ style.css
+├─ templates
+│  ├─ chat.html
+│  ├─ chat_2.html
+│  └─ login.html
+├─ test_db.py
+└─ vecter.py
+
+```

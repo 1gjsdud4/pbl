@@ -1,0 +1,33 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  mongo:
+    image: mongo:5.0
+    container_name: pbl_mongo
+    restart: unless-stopped
+    # .env 파일에 정의된 MONGO_URI 와는 별개로, 
+    # Mongo 초기 유저/패스워드를 여기서 설정합니다.
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: (ZhtmahtmProd)
+      MONGO_INITDB_DATABASE: pbl_database
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongodata:/data/db
+
+  web:
+    build: .
+    container_name: pbl_web
+    depends_on:
+      - mongo
+    ports:
+      - "5001:5000"
+
+    volumes:
+      - .:/app
+    restart: unless-stopped
+
+volumes:
+  mongodata:

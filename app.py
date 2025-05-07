@@ -27,7 +27,7 @@ def time_now():
     return formatted_time
 
 load_dotenv()  # .env 파일에서 환경 변수 로드
-os.environ["OPENAI_API_KEY"] = os.getenv('OPENAI_API_TOKEN')
+os.environ["OPENAI_API_KEY"] = os.getenv('OPENAI_API_KEY')  # OpenAI API 키 설정
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY')  # 비밀 키 설정
